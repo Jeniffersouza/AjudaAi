@@ -5,6 +5,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from typing import List
 
+#commit clainer
 
 DATABASE_URL = "mysql+mysqlconnector://root:@127.0.0.1:3306/db_ajuda_ai"
 engine = create_engine(DATABASE_URL)
@@ -28,9 +29,9 @@ class Service(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, index=True)
-    service_name = Column(String)
+    service_name = Column(String(255))
     value = Column(Float)
-    description = Column(String)
+    description = Column(String(255))
 
     def to_dict(self):
         return {
