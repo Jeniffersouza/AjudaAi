@@ -1,79 +1,89 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from sqlalchemy import create_engine, Column, Integer, String
+from fastapi import FastAPI, HTTPException, Depends
+from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy import create_engine, Column, Integer, String, Float, MetaData
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import text
+from sqlalchemy.orm import sessionmaker, Session
+from typing import List
 
 
-app = FastAPI()
-
-# Configuração da conexão com o banco de dados MySQL
 DATABASE_URL = "mysql+mysqlconnector://root:@127.0.0.1:3306/db_ajuda_ai"
 engine = create_engine(DATABASE_URL)
-
-# Criação da tabela de usuários no banco de dados
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-class UserDB(Base):
+app = FastAPI()
+# Model para usuário
+class User(Base):
     __tablename__ = "usuarios"
-    id = Column(Integer, primary_key=True, index=True)
-    nome = Column(String(25), unique=True, index=True)
-    cpf = Column(String(11), unique=True, index=True)
-    senha = Column(String(25))
 
+    id = Column(Integer, primary_key=True, index=True)
+    cpf = Column(String(255), unique=True, index=True)
+    email = Column(String(255), index=True)
+    password = Column(String(255))
+    name = Column(String(255))
+
+# Model para serviço
+class Service(Base):
+    __tablename__ = "servicos"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, index=True)
+    service_name = Column(String)
+    value = Column(Float)
+    description = Column(String)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "service_name": self.service_name,
+            "value": self.value,
+            "description": self.description,
+        }
+# Criar tabelas
+metadata = MetaData()
 Base.metadata.create_all(bind=engine)
 
-# Modelo de dados para o usuário
-class User(BaseModel):
-    nome: str
-    cpf: str
-    senha: str
+# Dependência para obter a sessão do banco de dados
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
-# Rota para criar um novo usuário
-@app.post("/cadastrar_usuario/")
-def create_user(user: User):
-    # Verifique se o CPF já está em uso
+# Rotas
+@app.post("/register")
+def register_user(cpf: str, email: str, password: str, name: str, db: Session = Depends(get_db)):
+    user = User(cpf=cpf, email=email, password=password, name=name)
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
 
-    with engine.connect() as conn:
-        existing_user = conn.execute(text(f"SELECT cpf FROM usuarios WHERE cpf = '{user.cpf}'")).first()
-    if existing_user:
-        raise HTTPException(status_code=400, detail="CPF já cadastrado")
+@app.post("/login")
+def login_user(cpf: str, password: str, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.cpf == cpf, User.password == password).first()
+    if user is None:
+        raise HTTPException(status_code=401, detail="Login unsuccessful")
+    return {"message": "Login successful"}
 
-    # Insira o novo usuário no banco de dados
-    db = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    db_session = db()
-    user_db = UserDB(nome=user.nome, cpf=user.cpf, senha=user.senha)
-    db_session.add(user_db)
-    db_session.commit()
-    db_session.close()
+@app.post("/services")
+def create_service(service_name: str, value: float, description: str, user_id: int, db: Session = Depends(get_db)):
+    service = Service(service_name=service_name, value=value, description=description, user_id=user_id)
+    db.add(service)
+    db.commit()
+    db.refresh(service)
+    return service
 
-    return {"Mensagem": "Usuário cadastrado com sucesso"}
+@app.get("/services")
+def get_services(user_id: int, db: Session = Depends(get_db)):
+    services = db.query(Service).filter(Service.user_id == user_id).all()
+    return services
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+# Adicione esta rota ao final do seu código
 
-
-
-# Rota para login 
-#post
-# precisa de cpf e senha post
-
-
-
-
-
-
-
-# Rota para cadastrar serviço 
-#post
-# nome do serviço, autor, preco, descrição
-
-
-
-
-
-
-# Rota para listar serviço
-# Get
+@app.get("/all-services", response_model=List[dict])
+def get_all_services(db: Session = Depends(get_db)):
+    services = db.query(Service).all()
+    return [service.to_dict() for service in services]
