@@ -1,0 +1,18 @@
+<!-- Adicione esta seção ao seu HTML -->
+<div id="loggedInSection" style="display: none;">
+  <h2>Seção logada</h2>
+  <label for="serviceName">Nome do Serviço:</label>
+  <input type="text" id="serviceName" name="serviceName" required>
+
+  <label for="serviceValue">Valor:</label>
+  <input type="text" id="serviceValue" name="serviceValue" required>
+
+  <label for="serviceDescription">Descrição:</label>
+  <textarea id="serviceDescription" name="serviceDescription" required></textarea>
+
+  <button type="button" id="addServiceBtn">Adicionar Serviço</button>
+
+  <div class="service-list" id="serviceList">
+    <!-- Serviços serão adicionados aqui dinamicamente -->
+  </div>
+</div>

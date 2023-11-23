@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <div class="navbar">
+    <button onclick="window.location.href='logout.html'">Logout</button>
+  </div>
+
+  <div class="dashboard">
+    <h1>Seus Serviços</h1>
+
+    <!-- Lista de serviços do usuário -->
+    <ul id="userServices">
+      <!-- Os serviços serão adicionados aqui dinamicamente -->
+    </ul>
+
+    <h2>Adicionar Novo Serviço</h2>
+    <form id="addServiceForm">
+      <label for="serviceName">Nome do Serviço:</label>
+      <input type="text" id="serviceName" name="serviceName" required>
+
+      <label for="serviceValue">Valor:</label>
+      <input type="text" id="serviceValue" name="serviceValue" required>
+
+      <label for="serviceDescription">Descrição:</label>
+      <textarea id="serviceDescription" name="serviceDescription" required></textarea>
+
+      <button type="submit">Adicionar Serviço</button>
+    </form>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="dashboard.js"></script>
+</body>
+</html>
